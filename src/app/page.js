@@ -10,73 +10,118 @@ const MAX_ENERGY = 10;
 const ENERGY_REGENERATION_TIME = 30 * 60 * 1000; // 30 minutes in ms
 
 export default function HomePage() {
-  // Fix: Initialize with default values for server-side rendering
+  // --- Server-side State (Database theke asbe) ---
   const [totalScore, setTotalScore] = useState(0);
+  const [referralCount, setReferralCount] = useState(0);
+  
+  // --- Client-side State (Browser-e thakbe) ---
   const [energy, setEnergy] = useState(MAX_ENERGY);
   const [lastEnergyRegeneration, setLastEnergyRegeneration] = useState(() => Date.now());
-  
   const [sessionScore, setSessionScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
   const [gameState, setGameState] = useState('ready'); // ready, playing, finished
   
-  const [referralCount, setReferralCount] = useState(0);
+  // --- UI & Auth State ---
   const [referralLink, setReferralLink] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
-
   const [flyingNumbers, setFlyingNumbers] = useState([]);
   const [showWheel, setShowWheel] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Page loading state
+  const [initData, setInitData] = useState(null); // Telegram auth data save korar jonno
 
-  // Initialize Telegram AND Load localStorage data on Client-Side
+  // --- 1. Load User Data from Server (or use Dev mock) ---
   useEffect(() => {
-    // --- FIX: Load localStorage data only on the client ---
-    // This code will only run in the browser, not on the server
-    const savedScore = Number(localStorage.getItem('totalScore')) || 0;
-    const savedEnergy = Number(localStorage.getItem('energy')) || MAX_ENERGY;
-    const savedRegen = Number(localStorage.getItem('lastEnergyRegeneration')) || Date.now();
-
-    setTotalScore(savedScore);
-    setEnergy(savedEnergy);
-    setLastEnergyRegeneration(savedRegen);
-    // --- End of Fix ---
-
-    // --- Existing Telegram/Dev Logic ---
-    let currentUser;
-    if (globalThis.Telegram?.WebApp && globalThis.Telegram.WebApp.initDataUnsafe?.user) {
-      // --- PRODUCTION (Inside Telegram) ---
-      console.log("Running inside Telegram.");
-      const tg = globalThis.Telegram.WebApp;
-      tg.ready();
-      tg.expand();
-      currentUser = tg.initDataUnsafe.user;
+    if (!globalThis.Telegram?.WebApp) {
+      console.warn("Not in Telegram. Using mock data for development.");
+      // --- Development Mode (Mock Data) ---
+      setReferralLink("https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_DEV123");
+      setReferralCount(5);
+      setTotalScore(1000);
+      setIsLoading(false);
       
-      // Fetch real referral count here
-      // fetch(`/api/referral?userId=${currentUser.id}`).then(res => res.json()).then(data => {
-      //   setReferralCount(data.count); 
-      // });
-      
-    } else {
-      // --- DEVELOPMENT (Outside Telegram) ---
-      console.warn("Telegram WebApp data not found. Running in development mode.");
-      currentUser = { id: 123456789, first_name: "Dev", last_name: "User" };
-      setReferralCount(5); 
+      // Load local energy
+      setEnergy(Number(localStorage.getItem('energy')) || MAX_ENERGY);
+      setLastEnergyRegeneration(Number(localStorage.getItem('lastEnergyRegeneration')) || Date.now());
+      return;
     }
 
-    if (currentUser) {
-      const refLink = `https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_${currentUser.id}`;
-      setReferralLink(refLink);
-    }
+    // --- Production Mode (Inside Telegram) ---
+    const tg = globalThis.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
     
-  }, []); // Empty dependency array ensures this runs only once on load (on client)
+    const telegramInitData = tg.initData;
+    const userId = tg.initDataUnsafe?.user?.id;
 
-  // Save state to localStorage
+    setInitData(telegramInitData); // Auth data save kore rakhi, pore score save korte lagbe
+
+    if (userId) {
+      setReferralLink(`https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_${userId}`);
+    }
+
+    // Server theke real data fetch koro
+    const fetchUserData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/user/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: telegramInitData }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to authenticate user');
+        }
+
+        const data = await response.json();
+
+        // Server theke pawa REAL data set koro
+        setTotalScore(data.totalScore || 0);
+        setReferralCount(data.referralCount || 0);
+
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        alert("Could not connect to server. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+
+    // Load local energy state
+    setEnergy(Number(localStorage.getItem('energy')) || MAX_ENERGY);
+    setLastEnergyRegeneration(Number(localStorage.getItem('lastEnergyRegeneration')) || Date.now());
+
+  }, []);
+
+  // --- 2. Save *Local* (Energy) State ---
+  // totalScore ekhon server-e save hoy, tai localStorage theke remove kora hocche
   useEffect(() => {
-    // This effect will also only run on the client, so localStorage is safe here
-    localStorage.setItem('totalScore', totalScore);
     localStorage.setItem('energy', energy);
     localStorage.setItem('lastEnergyRegeneration', lastEnergyRegeneration);
-  }, [totalScore, energy, lastEnergyRegeneration]);
+  }, [energy, lastEnergyRegeneration]);
   
-  // Energy Regeneration Logic
+  // --- 3. Save *Session Score* to Server (Async) ---
+  const saveScoreToServer = useCallback(async (scoreToAdd) => {
+    // initData state-e save kora chilo
+    if (!initData || scoreToAdd <= 0) return; 
+
+    try {
+      // Notun API route-e score pathacchi
+      await fetch('/api/user/update-score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData, scoreToAdd }),
+      });
+      // Amra response-er jonno wait korbona, UI update hoye geche
+    } catch (error) {
+      console.error('Failed to save score to server:', error);
+      // Ekhane error hole pore abar pathanor system kora jete pare
+    }
+  }, [initData]); // initData ready holei ei function-ta ready hobe
+
+  // --- 4. Energy Regeneration Logic ---
   useEffect(() => {
       const regenerationInterval = setInterval(() => {
           if(energy < MAX_ENERGY) {
@@ -90,23 +135,28 @@ export default function HomePage() {
       return () => clearInterval(regenerationInterval);
   }, [energy, lastEnergyRegeneration]);
 
-  // Game Timer Logic
-  // eslint-disable-next-line react-hooks/set-state-in-effect
+  // --- 5. Game Timer & Scoring Logic ---
   useEffect(() => {
     if (gameState !== 'playing' || timeLeft <= 0) {
       if (gameState === 'playing' && timeLeft <= 0) {
         setGameState('finished');
-        setTotalScore(prev => prev + sessionScore);
-        if (sessionScore > 0) { 
-            setShowWheel(true);
+        
+        // Update UI immediately
+        setTotalScore(prev => prev + sessionScore); 
+        
+        // Asynchronously save score to server
+        if (sessionScore > 0) {
+          saveScoreToServer(sessionScore); // Fire-and-forget
+          setShowWheel(true);
         }
       }
       return;
     }
     const timerInterval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
     return () => clearInterval(timerInterval);
-  }, [gameState, timeLeft, sessionScore]);
+  }, [gameState, timeLeft, sessionScore, saveScoreToServer]);
 
+  // --- 6. Game Controls ---
   const startGame = () => {
     if (energy <= 0) {
       alert("You're out of energy! Please wait for it to recharge.");
@@ -140,7 +190,9 @@ export default function HomePage() {
   const handleSpinEnd = (prize) => {
       setShowWheel(false);
       if (typeof prize === 'number') {
+          // Bonus score-takeo server-e save korte hobe
           setTotalScore(prev => prev + prize);
+          saveScoreToServer(prize);
           alert(`Congratulations! You won ${prize} extra coins!`);
       } else {
           alert('Better luck next time!');
@@ -156,7 +208,7 @@ export default function HomePage() {
       console.error('Failed to copy:', err);
       setCopySuccess('Failed');
     }
-    setTimeout(() => setCopySuccess(''), 2000); // Reset message after 2s
+    setTimeout(() => setCopySuccess(''), 2000);
   };
 
   const getButtonText = () => {
@@ -164,6 +216,15 @@ export default function HomePage() {
     if (gameState === 'finished') return 'Retry';
     return 'Start';
   };
+
+  // --- 7. Render Loading or Main Page ---
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <p className="text-2xl text-white animate-pulse">Loading User Data...</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -239,6 +300,7 @@ export default function HomePage() {
       </div>
       <BottomNav />
 
+      {/* --- CSS (No changes) --- */}
       <style jsx global>{`
         .energy-bar-bg {
           background-color: #374151; /* gray-700 */
