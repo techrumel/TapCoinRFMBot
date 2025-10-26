@@ -7,41 +7,31 @@ if (!process.env.TELEGRAM_BOT_TOKEN) {
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
-// --- Tomar Link-gulo ---
+// --- Your Links ---
 const APP_URL = 'https://t.me/TapcoinRMFBOT/tapcoin';
 const CHANNEL_URL = 'https://t.me/RedMarkFiles';
-// --- Tomar Game-er Welcome Image ---
-// Tumi ekhane tomar nijer banano ekta banner image-er direct URL dibe
-const WELCOME_IMAGE_URL = 'https://static.toiimg.com/thumb/msid-114671742,imgsize-28600,width-400,resizemode-4/114671742.jpg'; // Eita shudhu ekta example image
+const WELCOME_IMAGE_URL = 'https://static.toiimg.com/thumb/msid-114671742,imgsize-28600,width-400,resizemode-4/114671742.jpg';
 
-// --- Bot Command Setup ---
-
-// 1. /start command (MemeFi Style)
+// 🟢 /start command
 bot.start(async (ctx) => {
   const userId = ctx.from.id;
   const firstName = ctx.from.first_name || 'Player';
 
-  const welcomeMessage = `
+  const caption = `
 👋 *Welcome, ${firstName}!*
 
-Tap the coin, invite friends, and earn real rewards. Your journey starts now!
-
-Click '🔥 Play & Earn' to enter!
+Tap the coin, invite friends, and earn rewards.
+Click below to begin your TapCoin journey! 🔥
   `;
 
-  // Shudhu text-er bodole 'replyWithPhoto' use koro
   await ctx.replyWithPhoto(WELCOME_IMAGE_URL, {
-    caption: welcomeMessage, // Text-ta photo-r niche caption hishebe jabe
-    parse_mode: 'Markdown',  // Caption-e styling-er jonno
+    caption,
+    parse_mode: 'Markdown',
     reply_markup: {
       inline_keyboard: [
-        // Prothom Row: Main App Button
+        [{ text: '🔥 Play & Earn', web_app: { url: APP_URL } }],
         [
-          { text: '🔥 Play & Earn', web_app: { url: APP_URL } }
-        ],
-        // Ditiyo Row: Invite ebong Channel
-        [
-          { text: '🎁 Invite Friends', url: `https://t.me/share/url?url=https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_${userId}&text=Join%20me%20on%20TapCoin%20and%20earn%21` },
+          { text: '🎁 Invite Friends', url: `https://t.me/share/url?url=https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_${userId}&text=Join%20TapCoin%20and%20earn!` },
           { text: '📢 Our Channel', url: CHANNEL_URL }
         ]
       ]
@@ -49,37 +39,35 @@ Click '🔥 Play & Earn' to enter!
   });
 });
 
-// 2. /help command (Channel link shoh)
-bot.command('help', (ctx) => {
-  ctx.reply('Need help or want to see updates? Join our official channel!', {
+// 🟢 /help command
+bot.command('help', async (ctx) => {
+  await ctx.reply('Need help or want updates? Join our official channel 👇', {
     reply_markup: {
-      inline_keyboard: [
-        [
-          { text: '📢 Join Our Channel', url: CHANNEL_URL }
-        ]
-      ]
+      inline_keyboard: [[{ text: '📢 Join Our Channel', url: CHANNEL_URL }]]
     }
   });
 });
 
-// 3. Onno jekono message dile
+// 🟢 Catch-all message
 bot.on('message', async (ctx) => {
-  await ctx.reply("Sorry, I'm just a bot. Use the /start command or press the 'Play' button below.");
+  const text = ctx.message?.text || '';
+  if (text.startsWith('/start')) return; // Already handled above
+  await ctx.reply("Use /start to begin or press the 'Play' button below.");
 });
 
-
-// --- Main API Handler ---
-export async function POST(request) {
+// 🟢 Webhook Handler
+export async function POST(req) {
   try {
-    const body = await request.json();
+    const body = await req.json();
     await bot.handleUpdate(body);
-    return NextResponse.json({ status: 200, message: 'OK' });
-  } catch (error) {
-    console.error('Error handling Telegram update:', error.message);
-    return NextResponse.json({ status: 500, message: 'Error' });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error('Error handling update:', err);
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
 
+// 🟢 Health check
 export async function GET() {
-  return NextResponse.json({ status: 200, message: 'Bot is listening...' });
+  return NextResponse.json({ status: 200, message: 'Bot Webhook Active' });
 }
