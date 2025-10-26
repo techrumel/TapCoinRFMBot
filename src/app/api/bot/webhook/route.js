@@ -13,25 +13,23 @@ const CHANNEL_URL = 'https://t.me/RedMarkFiles'; // Tomar Main Channel Link
 
 // --- Bot Command Setup ---
 
-// 1. /start command (Sob kichu ekhane)
+// 1. /start command (Simplified, No Markdown, All Buttons)
 bot.start(async (ctx) => {
   const userId = ctx.from.id;
   const firstName = ctx.from.first_name || 'Player';
 
   // --- Notun Professional Welcome Message ---
   const welcomeMessage = `
-👋 *Welcome, ${firstName}!*
+👋 Welcome, ${firstName}!
 
 This is your main menu. Click the button below to start tapping, or use a command.
 
-*Available Commands:*
+Available Commands:
 /start - Show this menu
 /help - Join our channel for updates
-
-Click '🔥 START TAPPING' to enter the app!
   `;
 
-  await ctx.replyWithMarkdown(welcomeMessage, { // Markdown use korchi
+  await ctx.reply(welcomeMessage, { // Shudhu 'reply', no markdown
     reply_markup: {
       inline_keyboard: [
         // Prothom Row: Main App Button
@@ -48,7 +46,7 @@ Click '🔥 START TAPPING' to enter the app!
   });
 });
 
-// 2. /help command (Channel link shoh)
+// 2. /help command (Eta thik chilo)
 bot.command('help', (ctx) => {
   ctx.reply('Need help or want to see updates? Join our official channel!', {
     reply_markup: {
