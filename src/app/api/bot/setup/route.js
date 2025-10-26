@@ -13,18 +13,21 @@ export async function GET() {
   }
 
   try {
-    // 1️⃣ Set Webhook
+    // 1️⃣ Set Webhook (Tells Telegram where your new code is)
     await bot.telegram.setWebhook(WEBHOOK_URL);
 
-    // 2️⃣ Only set commands (keep menu as is)
+    // 2️⃣ Set commands (Adds /open to the list)
     await bot.telegram.setMyCommands([
-      { command: 'start', description: '🚀 Start your TapCoin journey' },
-      { command: 'help', description: 'ℹ️ Get help & channel link' },
+      { command: 'start', description: '👋 Welcome & Instructions' },
+      { command: 'open', description: '🚀 Open the TapCoin App' },
+      { command: 'help', description: 'ℹ️ How to Play & Withdraw' },
     ]);
+
+    // 3️⃣ Menu button is NOT changed here
 
     return NextResponse.json({
       status: 200,
-      message: '✅ Webhook + Commands set successfully (menu untouched)',
+      message: '✅ Webhook + Commands updated successfully (menu untouched)',
       webhook: WEBHOOK_URL,
     });
   } catch (error) {
