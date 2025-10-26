@@ -26,16 +26,15 @@ export async function GET() {
       }
     });
 
-    // 3. Bot-er command list update koro (Notun /open command)
+    // 3. Bot-er command list update koro (/open baad)
     await bot.telegram.setMyCommands([
-      { command: 'start', description: '👋 Welcome Message' },
-      { command: 'open', description: '🚀 Open App & Earn' },
+      { command: 'start', description: '🚀 Open App & Earn' },
       { command: 'help', description: 'ℹ️ Get Help & Channel Link' }
     ]);
 
     return NextResponse.json({ 
       status: 200, 
-      message: 'Bot setup successful! (Split /start and /open)',
+      message: 'Bot setup successful! (Buttons moved to /start)',
       webhook: WEBHOOK_URL,
       menuButton: 'Set to Commands'
     });

@@ -13,19 +13,14 @@ const CHANNEL_URL = 'https://t.me/RedMarkFiles'; // Tomar Main Channel Link
 
 // --- Bot Command Setup ---
 
-// 1. /start command (Shudhu Simple Text)
+// 1. /start command (Ekhon shob button ekhane)
 bot.start(async (ctx) => {
-  const firstName = ctx.from.first_name || 'Player';
-  const message = `👋 Welcome, ${firstName}!\n\nType /open to launch the app and see all options.`;
-  await ctx.reply(message);
-});
-
-// 2. Notun /open command (Shob Button Ekhane)
-bot.command('open', async (ctx) => {
   const userId = ctx.from.id;
-  const message = `🚀 Get ready to earn!\n\nClick '🔥 START TAPPING' below to open the app.`;
+  const firstName = ctx.from.first_name || 'Player';
 
-  await ctx.reply(message, {
+  const welcomeMessage = `👋 Welcome, ${firstName}!\n\nClick '🔥 START TAPPING' below to open the app and start earning.`;
+
+  await ctx.reply(welcomeMessage, { // Simple 'reply' (markdown chara)
     reply_markup: {
       inline_keyboard: [
         // Prothom Row: Main App Button
@@ -42,6 +37,8 @@ bot.command('open', async (ctx) => {
   });
 });
 
+// 2. /open command remove kora hoyeche
+
 // 3. /help command (Channel link shoh)
 bot.command('help', (ctx) => {
   ctx.reply('Need help or want to see updates? Join our official channel!', {
@@ -57,7 +54,7 @@ bot.command('help', (ctx) => {
 
 // 4. Onno jekono message dile
 bot.on('message', async (ctx) => {
-  await ctx.reply("Sorry, I'm just a bot. Use the /start or /open command.");
+  await ctx.reply("Sorry, I'm just a bot. Use the /start command or open the app from the 'Menu' button.");
 });
 
 
