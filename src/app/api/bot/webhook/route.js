@@ -13,14 +13,25 @@ const CHANNEL_URL = 'https://t.me/RedMarkFiles'; // Tomar Main Channel Link
 
 // --- Bot Command Setup ---
 
-// 1. /start command (Typo Fixed)
+// 1. /start command (Sob kichu ekhane)
 bot.start(async (ctx) => {
   const userId = ctx.from.id;
   const firstName = ctx.from.first_name || 'Player';
 
-  const welcomeMessage = `👋 Welcome, ${firstName}!\n\nClick '🔥 START TAPPING' below to open the app and start earning.`;
+  // --- Notun Professional Welcome Message ---
+  const welcomeMessage = `
+👋 *Welcome, ${firstName}!*
 
-  await ctx.reply(welcomeMessage, {
+This is your main menu. Click the button below to start tapping, or use a command.
+
+*Available Commands:*
+/start - Show this menu
+/help - Join our channel for updates
+
+Click '🔥 START TAPPING' to enter the app!
+  `;
+
+  await ctx.replyWithMarkdown(welcomeMessage, { // Markdown use korchi
     reply_markup: {
       inline_keyboard: [
         // Prothom Row: Main App Button
@@ -29,7 +40,6 @@ bot.start(async (ctx) => {
         ],
         // Ditiyo Row: Invite ebong Channel
         [
-          // --- EI LINE-E TYPO CHILO, EKHON FIX KORA HOYECHE ---
           { text: '🎁 Invite & Earn', url: `https://t.me/share/url?url=https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_${userId}&text=Join%20me%20on%20TapCoin%20and%20earn%21` },
           { text: '📢 Our Channel', url: CHANNEL_URL }
         ]
@@ -38,7 +48,7 @@ bot.start(async (ctx) => {
   });
 });
 
-// 2. /help command (Eta thik chilo)
+// 2. /help command (Channel link shoh)
 bot.command('help', (ctx) => {
   ctx.reply('Need help or want to see updates? Join our official channel!', {
     reply_markup: {
@@ -53,7 +63,7 @@ bot.command('help', (ctx) => {
 
 // 3. Onno jekono message dile
 bot.on('message', async (ctx) => {
-  await ctx.reply("Sorry, I'm just a bot. Use the /start command or open the app from the 'Menu' button.");
+  await ctx.reply("Sorry, I'm just a bot. Use the /start command to see your options.");
 });
 
 
@@ -64,7 +74,7 @@ export async function POST(request) {
     await bot.handleUpdate(body);
     return NextResponse.json({ status: 200, message: 'OK' });
   } catch (error) {
-    console.error('Error handling Telegram update:', error);
+    console.error('Error handling Telegram update:', error.message);
     return NextResponse.json({ status: 500, message: 'Error' });
   }
 }

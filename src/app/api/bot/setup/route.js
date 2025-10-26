@@ -19,22 +19,22 @@ export async function GET() {
       throw new Error('Failed to set webhook');
     }
 
-    // 2. "Menu" Button Set koro
+    // 2. "Menu" Button Set koro (Commands type)
     await bot.telegram.setChatMenuButton({
       menu_button: {
         type: 'commands'
       }
     });
 
-    // 3. Bot-er command list update koro (/open baad)
+    // 3. Bot-er command list update koro
     await bot.telegram.setMyCommands([
-      { command: 'start', description: '🚀 Open App & Earn' },
+      { command: 'start', description: '🚀 Show Menu & Open App' },
       { command: 'help', description: 'ℹ️ Get Help & Channel Link' }
     ]);
 
     return NextResponse.json({ 
       status: 200, 
-      message: 'Bot setup successful! (Buttons moved to /start)',
+      message: 'Bot setup successful! (Final Version)',
       webhook: WEBHOOK_URL,
       menuButton: 'Set to Commands'
     });
