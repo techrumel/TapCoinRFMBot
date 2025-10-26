@@ -280,7 +280,7 @@ export default function HomePage() {
         <div className="w-full max-w-sm z-20">
            {/* --- AD BANNER 3 (BOTTOM) --- */}
            <AdBanner adKey="d229a298f12c0c653e1d0c97f68a077c" format="iframe" height={50} width={320} />
-           <WithdrawalSystem referralCount={referralCount} />
+           <WithdrawalSystem totalScore={totalScore} />
         </div>
       </div>
       <BottomNav />

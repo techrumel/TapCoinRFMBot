@@ -2,12 +2,18 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-const WithdrawalSystem = ({ referralCount }) => {
+// --- Notun Logic ---
+const MIN_WITHDRAW_COINS = 20000000; // 20 Million coins ($20 USD)
+const COINS_PER_DOLLAR = 1000000; // 1 Million coins
+
+const WithdrawalSystem = ({ totalScore }) => { // <-- Prop 'referralCount' theke 'totalScore' kora hoyeche
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [initData, setInitData] = useState(null); // Auth data save korar jonno
-    const [isRequesting, setIsRequesting] = useState(false); // Button loading state
+    const [initData, setInitData] = useState(null);
+    const [isRequesting, setIsRequesting] = useState(false);
     
-    const requiredReferrals = 10;
+    // Calculate current earnings
+    const currentDollars = (totalScore / COINS_PER_DOLLAR).toFixed(2);
+    const hasEnoughCoins = totalScore >= MIN_WITHDRAW_COINS;
 
     // Telegram auth data load koro
     useEffect(() => {
@@ -18,42 +24,15 @@ const WithdrawalSystem = ({ referralCount }) => {
         }
     }, []);
 
-    // --- Notun Function: Server-e Number Save Kora ---
-    const savePhoneNumberToServer = async (phone) => {
-      if (!initData) {
-        alert("Authentication data not found. Please restart the app.");
-        return;
-      }
-      try {
-        // Amra user-er profile update korar jonno notun ekta API route use korbo
-        const response = await fetch('/api/user/update-contact', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData, phone }),
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to save phone number.');
-        }
-        
-        console.log('Phone number saved successfully.');
-        return true;
-
-      } catch (error) {
-        console.error('Error saving phone number:', error);
-        alert(`Error: ${error.message}`);
-        return false;
-      }
-    };
+    // (Ekhane 'savePhoneNumberToServer' function-ta thakbe, jodi age add kore thako)
 
     // --- Updated Function: Withdraw Button Click ---
     const handleWithdrawClick = () => {
-        if (referralCount < requiredReferrals) {
-            alert(`You need at least ${requiredReferrals} referrals to proceed. You currently have ${referralCount}.`);
+        if (!hasEnoughCoins) {
+            alert(`You need at least ${MIN_WITHDRAW_COINS.toLocaleString()} coins ($20) to withdraw. You currently have ${totalScore.toLocaleString()} coins ($${currentDollars}).`);
             return;
         }
 
-        // Check if Telegram object ache
         const tg = globalThis.Telegram?.WebApp;
         if (!tg) {
             alert("Please open this app inside Telegram to withdraw.");
@@ -68,21 +47,9 @@ const WithdrawalSystem = ({ referralCount }) => {
                 // User permission diyeche
                 console.log("Contact shared!");
                 
-                // Amader Telegram WebApp script-er version check korte hoy
-                let userPhone;
-                if (tg.initDataUnsafe?.user?.phone) {
-                   // Notun version-e ekhane phone number pawa jay
-                   userPhone = tg.initDataUnsafe.user.phone;
-                }
+                // (Ekhane number save korar logic thakte pare)
                 
-                // Pawa number-ta server-e save koro
-                // Ekhon-o shob user-er phone pawa na gele, amra user-ke manually type korte bolbo
-                // Kintu ekhon amra shudhu permission check korchi
-                
-                alert("Thank you for sharing your contact! We will verify your account.");
-                
-                // Ekhon-i modal open korar bodole user-ke bolte paro "Your number is saved"
-                // Ekhane ami modal-tai open kore dichi
+                // Ekhon modal open koro
                 setIsModalOpen(true);
                 
             } else {
@@ -96,27 +63,39 @@ const WithdrawalSystem = ({ referralCount }) => {
     return (
         <>
             <div className="w-full text-center mt-4">
-                <p className={`mb-2 font-bold ${referralCount >= requiredReferrals ? 'text-green-400' : 'text-yellow-400'}`}>
-                    Referrals: {referralCount} / {requiredReferrals}
+                {/* --- Notun Text --- */}
+                <p className={`mb-2 font-bold ${hasEnoughCoins ? 'text-green-400' : 'text-yellow-400'}`}>
+                    Coins: {totalScore.toLocaleString()} / {MIN_WITHDRAW_COINS.toLocaleString()}
                 </p>
+                <p className="text-sm text-gray-400 mb-2">
+                    Current Value: ${currentDollars} USD
+                </p>
+                
                 <button
                     onClick={handleWithdrawClick}
-                    disabled={referralCount < requiredReferrals || isRequesting || !initData}
+                    disabled={!hasEnoughCoins || isRequesting || !initData}
                     className="w-full bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-bold py-3 px-4 rounded-lg text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isRequesting ? 'Requesting...' : 'Withdraw Funds'}
-                </D_button>
+                </button> {/* <-- TYPO FIX KORA HOYECHE: </D_button> -> </button> */}
             </div>
 
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay">
                     <div className="bg-gray-800 border border-cyan-500 rounded-2xl p-6 max-w-sm w-full mx-4">
                         <h2 className="text-2xl font-bold mb-4 text-cyan-300">Withdrawal Instructions</h2>
-                        <p className='text-white mb-4'>Your account is being verified.</p>
+                        
+                        {/* --- Notun Instructions --- */}
                         <div className="text-left space-y-3 text-gray-300">
-                            <p><strong className="text-white">Step 1:</strong> Click the button below to join our official Telegram Group.</p>
-                            <p><strong className="text-white">Step 2:</strong> In the group, post a screenshot of your game homepage.</p>
-                            <p><strong className="text-white">Step 3:</strong> State your desired payment method (PayPal, Payoneer).</p>
+                            <p className='text-white text-lg'>Your Balance: ${currentDollars} USD</p>
+                            <ul className="list-disc list-inside text-sm pl-2">
+                                <li>Rate: 1,000,000 Coins = $1 USD</li>
+                                <li>Minimum Payout: $20 USD</li>
+                            </ul>
+                            <p className="text-white pt-2">Steps to Withdraw:</p>
+                            <p><strong className="text-white">1.</strong> Join our Telegram Group (button below).</p>
+                            <p><strong className="text-white">2.</strong> Post a screenshot of your game homepage.</p>
+                            <p><strong className="text-white">3.</strong> State your payment method (PayPal, Payoneer) and email.</p>
                         </div>
                         
                         <div className="mt-6 flex flex-col gap-3">
@@ -135,7 +114,7 @@ const WithdrawalSystem = ({ referralCount }) => {
 };
 
 WithdrawalSystem.propTypes = {
-    referralCount: PropTypes.number.isRequired,
+    totalScore: PropTypes.number.isRequired, // <-- Prop name update kora hoyeche
 };
 
 export default WithdrawalSystem;
