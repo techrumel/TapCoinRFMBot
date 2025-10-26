@@ -7,9 +7,6 @@ const bot = new Telegraf(botToken);
 // Tomar correct Vercel URL
 const WEBHOOK_URL = `https://tap-coin-rfm-bot.vercel.app/api/bot/webhook`;
 
-// Tomar Mini App-er URL
-const WEB_APP_URL = 'https://t.me/TapcoinRMFBOT/tapcoin';
-
 export async function GET() {
   if (!botToken) {
     return NextResponse.json({ status: 500, message: 'Bot Token not found' });
@@ -17,17 +14,16 @@ export async function GET() {
 
   try {
     // 1. Webhook Set koro
+    // Etai Telegram-ke bolbe je tomar notun code kothay ache
     const webhookSet = await bot.telegram.setWebhook(WEBHOOK_URL);
     if (!webhookSet) {
       throw new Error('Failed to set webhook');
     }
 
-    // 2. "Menu" Button Set koro (Tomar request-moto "Open" button)
+    // 2. "Menu" Button-take BotFather-er default (/) menu-te set koro
     await bot.telegram.setChatMenuButton({
       menu_button: {
-        type: 'web_app',
-        text: 'Open', // <-- Tomar screenshot-er "Open" button
-        web_app: { url: WEB_APP_URL }
+        type: 'commands' // 'commands' mane hocche default (/) button
       }
     });
 
@@ -39,9 +35,9 @@ export async function GET() {
 
     return NextResponse.json({ 
       status: 200, 
-      message: 'Bot setup successful! (Open button restored)',
+      message: 'Bot setup successful! (Menu Button Restored to Default)',
       webhook: WEBHOOK_URL,
-      menuButton: 'Set to Open Web App'
+      menuButton: 'Set to Commands'
     });
 
   } catch (error) {
