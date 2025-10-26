@@ -13,14 +13,14 @@ const CHANNEL_URL = 'https://t.me/RedMarkFiles'; // Tomar Main Channel Link
 
 // --- Bot Command Setup ---
 
-// 1. /start command (Ekhon shob button ekhane)
+// 1. /start command (Typo Fixed)
 bot.start(async (ctx) => {
   const userId = ctx.from.id;
   const firstName = ctx.from.first_name || 'Player';
 
   const welcomeMessage = `👋 Welcome, ${firstName}!\n\nClick '🔥 START TAPPING' below to open the app and start earning.`;
 
-  await ctx.reply(welcomeMessage, { // Simple 'reply' (markdown chara)
+  await ctx.reply(welcomeMessage, {
     reply_markup: {
       inline_keyboard: [
         // Prothom Row: Main App Button
@@ -29,6 +29,7 @@ bot.start(async (ctx) => {
         ],
         // Ditiyo Row: Invite ebong Channel
         [
+          // --- EI LINE-E TYPO CHILO, EKHON FIX KORA HOYECHE ---
           { text: '🎁 Invite & Earn', url: `https://t.me/share/url?url=https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_${userId}&text=Join%20me%20on%20TapCoin%20and%20earn%21` },
           { text: '📢 Our Channel', url: CHANNEL_URL }
         ]
@@ -37,9 +38,7 @@ bot.start(async (ctx) => {
   });
 });
 
-// 2. /open command remove kora hoyeche
-
-// 3. /help command (Channel link shoh)
+// 2. /help command (Eta thik chilo)
 bot.command('help', (ctx) => {
   ctx.reply('Need help or want to see updates? Join our official channel!', {
     reply_markup: {
@@ -52,7 +51,7 @@ bot.command('help', (ctx) => {
   });
 });
 
-// 4. Onno jekono message dile
+// 3. Onno jekono message dile
 bot.on('message', async (ctx) => {
   await ctx.reply("Sorry, I'm just a bot. Use the /start command or open the app from the 'Menu' button.");
 });
