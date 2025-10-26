@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import BottomNav from '../components/BottomNav';
-import AdBanner from '../components/AdBanner';
+import AdBanner from '../components/AdBanner'; // <-- Ad component
 import LuckyWheel from '../components/LuckyWheel';
 import WithdrawalSystem from '../components/WithdrawalSystem';
 
@@ -10,34 +10,26 @@ const MAX_ENERGY = 10;
 const ENERGY_REGENERATION_TIME = 30 * 60 * 1000; // 30 minutes in ms
 
 export default function HomePage() {
-  // --- Server-side State (Database theke asbe) ---
+  // States...
   const [totalScore, setTotalScore] = useState(0);
   const [referralCount, setReferralCount] = useState(0);
-  
-  // --- Client-side State (Browser-e thakbe) ---
   const [energy, setEnergy] = useState(MAX_ENERGY);
   const [lastEnergyRegeneration, setLastEnergyRegeneration] = useState(() => Date.now());
   const [sessionScore, setSessionScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
-  const [gameState, setGameState] = useState('ready'); // ready, playing, finished
-  
-  // --- UI & Auth State ---
+  const [gameState, setGameState] = useState('ready');
   const [referralLink, setReferralLink] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
   const [flyingNumbers, setFlyingNumbers] = useState([]);
   const [showWheel, setShowWheel] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Page loading state
-  const [initData, setInitData] = useState(null); // Telegram auth data save korar jonno
+  const [isLoading, setIsLoading] = useState(true);
+  const [initData, setInitData] = useState(null);
 
-  // --- 1. Load User Data from Server (or use Dev mock) ---
-  // --- EI SECTION-TA UPDATE KORA HOYECHE ---
+  // --- 1. Load User Data (Telegram check) ---
   useEffect(() => {
-    // We add a small delay (100ms) to allow the Telegram WebApp script to load
     const authTimer = setTimeout(() => {
-      
       const tg = globalThis.Telegram?.WebApp;
 
-      // Check if Telegram script is loaded and has auth data
       if (tg && tg.initData) {
         // --- Production Mode (Inside Telegram) ---
         console.log("Telegram WebApp found. Running in Production Mode.");
@@ -47,15 +39,11 @@ export default function HomePage() {
         const telegramInitData = tg.initData;
         const userId = tg.initDataUnsafe?.user?.id;
 
-        setInitData(telegramInitData); // Auth data save kore rakhi
-
+        setInitData(telegramInitData);
         if (userId) {
           setReferralLink(`https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_${userId}`);
-        } else {
-          console.error("User ID not found in Telegram initData.");
         }
 
-        // Server theke real data fetch koro
         const fetchUserData = async () => {
           try {
             setIsLoading(true);
@@ -64,15 +52,10 @@ export default function HomePage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ initData: telegramInitData }),
             });
-
-            if (!response.ok) {
-              throw new Error('Failed to authenticate user');
-            }
-
+            if (!response.ok) throw new Error('Failed to authenticate user');
             const data = await response.json();
             setTotalScore(data.totalScore || 0);
             setReferralCount(data.referralCount || 0);
-
           } catch (error) {
             console.error("Error fetching user data:", error);
             alert("Could not connect to server. Please try again.");
@@ -80,42 +63,35 @@ export default function HomePage() {
             setIsLoading(false);
           }
         };
-
         fetchUserData();
 
-        // Load local energy state
         setEnergy(Number(localStorage.getItem('energy')) || MAX_ENERGY);
         setLastEnergyRegeneration(Number(localStorage.getItem('lastEnergyRegeneration')) || Date.now());
 
       } else {
         // --- Development Mode (Outside Telegram) ---
-        console.warn("Telegram WebApp not found after 100ms. Running in Development Mode.");
+        console.warn("Telegram WebApp not found. Running in Development Mode.");
         setReferralLink("https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_DEV123");
         setReferralCount(5);
         setTotalScore(1000);
         setIsLoading(false);
-        
-        // Load local energy
         setEnergy(Number(localStorage.getItem('energy')) || MAX_ENERGY);
         setLastEnergyRegeneration(Number(localStorage.getItem('lastEnergyRegeneration')) || Date.now());
       }
-
     }, 100); // 100ms delay
 
-    return () => clearTimeout(authTimer); // Cleanup the timer
-    
-  }, []); // Empty array, runs only once
+    return () => clearTimeout(authTimer);
+  }, []);
 
-  // --- 2. Save *Local* (Energy) State ---
+  // --- 2. Save Local (Energy) State ---
   useEffect(() => {
     localStorage.setItem('energy', energy);
     localStorage.setItem('lastEnergyRegeneration', lastEnergyRegeneration);
   }, [energy, lastEnergyRegeneration]);
   
-  // --- 3. Save *Session Score* to Server (Async) ---
+  // --- 3. Save Session Score to Server (Async) ---
   const saveScoreToServer = useCallback(async (scoreToAdd) => {
     if (!initData || scoreToAdd <= 0) return; 
-
     try {
       await fetch('/api/user/update-score', {
         method: 'POST',
@@ -147,7 +123,6 @@ export default function HomePage() {
       if (gameState === 'playing' && timeLeft <= 0) {
         setGameState('finished');
         setTotalScore(prev => prev + sessionScore); 
-        
         if (sessionScore > 0) {
           saveScoreToServer(sessionScore);
           setShowWheel(true);
@@ -182,7 +157,7 @@ export default function HomePage() {
     if (gameState !== 'playing') return;
     let scoreToAdd = 1;
     let isBonus = false;
-    if (Math.random() < 0.05) { // 5% lucky chance
+    if (Math.random() < 0.05) {
       scoreToAdd = Math.floor(Math.random() * 50) + 10;
       isBonus = true;
     }
@@ -241,8 +216,9 @@ export default function HomePage() {
           ))}
         </div>
         
-        {/* Top Section: Score and Energy */}
+        {/* --- Top Section: Ad + Score + Energy --- */}
         <div className="w-full max-w-sm">
+            {/* --- AD BANNER 1 (TOP) --- */}
             <AdBanner adKey="d229a298f12c0c653e1d0c97f68a077c" format="iframe" height={50} width={320} />
             
             <div className="flex justify-between items-center mb-1 mt-4">
@@ -255,7 +231,7 @@ export default function HomePage() {
             <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-300 drop-shadow-lg mt-4">{totalScore.toLocaleString()}</h1>
         </div>
 
-        {/* Middle Section: Game */}
+        {/* --- Middle Section: Game --- */}
         <div className="flex flex-col items-center justify-center my-6 z-20">
           <button
             type="button"
@@ -273,6 +249,12 @@ export default function HomePage() {
           )}
         </div>
         
+        {/* --- AD BANNER 2 (MIDDLE) --- */}
+        {/* Ekhane 300x250 high-value ad-ta dilam */}
+        <div className="w-full max-w-sm my-4 z-20">
+          <AdBanner adKey="39340d76f3a3d7b5a1ffba865eff0357" format="iframe" height={250} width={300} />
+        </div>
+
         {/* --- Referral Link Section --- */}
         {referralLink && (
           <div className="w-full max-w-sm my-4 z-20">
@@ -294,21 +276,20 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Bottom Section: Ads & Withdrawal */}
+        {/* --- Bottom Section: Ad + Withdrawal --- */}
         <div className="w-full max-w-sm z-20">
+           {/* --- AD BANNER 3 (BOTTOM) --- */}
            <AdBanner adKey="d229a298f12c0c653e1d0c97f68a077c" format="iframe" height={50} width={320} />
            <WithdrawalSystem referralCount={referralCount} />
         </div>
       </div>
       <BottomNav />
 
-      {/* --- CSS (No changes) --- */}
+      {/* --- CSS --- */}
       <style jsx global>{`
-        .energy-bar-bg {
-          background-color: #374151; /* gray-700 */
-        }
+        .energy-bar-bg { background-color: #374151; }
         .energy-bar-inner {
-          background: linear-gradient(to right, #2dd4bf, #06b6d4); /* teal-400 to cyan-500 */
+          background: linear-gradient(to right, #2dd4bf, #06b6d4);
           transition: width 0.3s ease-in-out;
         }
         .flying-number {
@@ -318,23 +299,12 @@ export default function HomePage() {
           animation: fly-up 1s ease-out forwards;
         }
         @keyframes fly-up {
-          to {
-            transform: translateY(-80px);
-            opacity: 0;
-          }
+          to { transform: translateY(-80px); opacity: 0; }
         }
-        .coin-pulse {
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
+        .coin-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.8;
-            transform: scale(1.05);
-          }
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.05); }
         }
       `}</style>
     </>

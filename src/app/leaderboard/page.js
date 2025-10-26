@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import BottomNav from '../../components/BottomNav';
+import AdBanner from '../../components/AdBanner'; // <-- Ad component
 
 export default function LeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -38,9 +39,12 @@ export default function LeaderboardPage() {
   return (
     <>
       <div className="flex flex-col items-center min-h-screen p-4 pb-24">
-        <h1 className="text-4xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">Leaderboard</h1>
+        <h1 className="text-4xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">Leaderboard</h1>
         
-        <div className="w-full max-w-md space-y-3">
+        {/* --- AD BANNER 1 (TOP) --- */}
+        <AdBanner adKey="d229a298f12c0c653e1d0c97f68a077c" format="iframe" height={50} width={320} />
+        
+        <div className="w-full max-w-md space-y-3 mt-6">
           {isLoading && (
             <p className="text-center text-gray-400 text-lg animate-pulse">Loading Rankings...</p>
           )}
@@ -51,28 +55,35 @@ export default function LeaderboardPage() {
 
           {!isLoading && !error && (
             leaderboard.map((user, index) => (
-              <div 
-                key={user.id} 
-                className={`bg-gray-800 border border-gray-700 p-4 rounded-xl flex items-center transition-all 
-                  ${index === 0 ? 'border-yellow-400 shadow-lg' : ''}
-                  ${index === 1 ? 'border-gray-400 shadow-md' : ''}
-                  ${index === 2 ? 'border-orange-600 shadow-sm' : ''}
-                `}
-              >
-                {/* Rank */}
-                <div className="text-xl font-bold w-12 text-center">
-                  {getRankIcon(index)}
+              // React Fragment use kora hocche jate ad inject kora jay
+              <div key={user.id}> 
+                <div 
+                  className={`bg-gray-800 border border-gray-700 p-4 rounded-xl flex items-center transition-all 
+                    ${index === 0 ? 'border-yellow-400 shadow-lg' : ''}
+                    ${index === 1 ? 'border-gray-400 shadow-md' : ''}
+                    ${index === 2 ? 'border-orange-600 shadow-sm' : ''}
+                  `}
+                >
+                  <div className="text-xl font-bold w-12 text-center">
+                    {getRankIcon(index)}
+                  </div>
+                  <div className="flex-1 ml-4">
+                    <h3 className="font-semibold text-lg text-white truncate">
+                      {user.username}
+                    </h3>
+                    <p className="text-yellow-400 font-bold">
+                      {user.score.toLocaleString()} Coins
+                    </p>
+                  </div>
                 </div>
-                
-                {/* User Info */}
-                <div className="flex-1 ml-4">
-                  <h3 className="font-semibold text-lg text-white truncate">
-                    {user.username}
-                  </h3>
-                  <p className="text-yellow-400 font-bold">
-                    {user.score.toLocaleString()} Coins
-                  </p>
-                </div>
+
+                {/* --- AD BANNER 2 (MIDDLE) --- */}
+                {/* 3rd place-er pore ekta boro ad show korbe */}
+                {index === 2 && (
+                   <div className="py-4 flex justify-center">
+                    <AdBanner adKey="39340d76f3a3d7b5a1ffba865eff0357" format="iframe" height={250} width={300} />
+                  </div>
+                )}
               </div>
             ))
           )}
