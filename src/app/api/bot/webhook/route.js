@@ -13,15 +13,19 @@ const CHANNEL_URL = 'https://t.me/RedMarkFiles'; // Tomar Main Channel Link
 
 // --- Bot Command Setup ---
 
-// 1. Notun /start command (Simplified & Fixed)
+// 1. /start command (Shudhu Simple Text)
 bot.start(async (ctx) => {
-  const userId = ctx.from.id;
   const firstName = ctx.from.first_name || 'Player';
+  const message = `👋 Welcome, ${firstName}!\n\nType /open to launch the app and see all options.`;
+  await ctx.reply(message);
+});
 
-  // --- Static, attractive message (No more markdown errors) ---
-  const welcomeMessage = `👋 Welcome, ${firstName}!\n\nClick '🔥 START TAPPING' below to open the app and start earning coins.`;
+// 2. Notun /open command (Shob Button Ekhane)
+bot.command('open', async (ctx) => {
+  const userId = ctx.from.id;
+  const message = `🚀 Get ready to earn!\n\nClick '🔥 START TAPPING' below to open the app.`;
 
-  await ctx.reply(welcomeMessage, { // <-- replyWithMarkdown change kore shudhu 'reply' kora hoyeche
+  await ctx.reply(message, {
     reply_markup: {
       inline_keyboard: [
         // Prothom Row: Main App Button
@@ -38,7 +42,7 @@ bot.start(async (ctx) => {
   });
 });
 
-// 2. /help command (Eta thik chilo)
+// 3. /help command (Channel link shoh)
 bot.command('help', (ctx) => {
   ctx.reply('Need help or want to see updates? Join our official channel!', {
     reply_markup: {
@@ -51,9 +55,9 @@ bot.command('help', (ctx) => {
   });
 });
 
-// 3. Onno jekono message dile
+// 4. Onno jekono message dile
 bot.on('message', async (ctx) => {
-  await ctx.reply("Sorry, I'm just a bot. Use the /start command to see your options or open the app from the 'Menu' button below.");
+  await ctx.reply("Sorry, I'm just a bot. Use the /start or /open command.");
 });
 
 
