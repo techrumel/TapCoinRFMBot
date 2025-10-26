@@ -9,37 +9,39 @@ const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
 // --- Tomar Link-gulo ---
 const APP_URL = 'https://t.me/TapcoinRMFBOT/tapcoin';
-const CHANNEL_URL = 'https://t.me/RedMarkFiles'; // Tomar Main Channel Link
+const CHANNEL_URL = 'https://t.me/RedMarkFiles';
+// --- Tomar Game-er Welcome Image ---
+// Tumi ekhane tomar nijer banano ekta banner image-er direct URL dibe
+const WELCOME_IMAGE_URL = 'https://static.toiimg.com/thumb/msid-114671742,imgsize-28600,width-400,resizemode-4/114671742.jpg'; // Eita shudhu ekta example image
 
 // --- Bot Command Setup ---
 
-// 1. /start command (Ekhon 100% kaj korbe)
+// 1. /start command (MemeFi Style)
 bot.start(async (ctx) => {
   const userId = ctx.from.id;
   const firstName = ctx.from.first_name || 'Player';
 
   const welcomeMessage = `
-👋 Welcome, ${firstName}!
+👋 *Welcome, ${firstName}!*
 
-This is your main menu. Click the button below to start tapping, or use a command.
+Tap the coin, invite friends, and earn real rewards. Your journey starts now!
 
-Available Commands:
-/start - Show this menu
-/help - Join our channel for updates
-
-Click '🔥 START TAPPING' to enter the app!
+Click '🔥 Play & Earn' to enter!
   `;
 
-  await ctx.reply(welcomeMessage, { // Markdown chara simple reply
+  // Shudhu text-er bodole 'replyWithPhoto' use koro
+  await ctx.replyWithPhoto(WELCOME_IMAGE_URL, {
+    caption: welcomeMessage, // Text-ta photo-r niche caption hishebe jabe
+    parse_mode: 'Markdown',  // Caption-e styling-er jonno
     reply_markup: {
       inline_keyboard: [
         // Prothom Row: Main App Button
         [
-          { text: '🔥 START TAPPING 🔥', web_app: { url: APP_URL } }
+          { text: '🔥 Play & Earn', web_app: { url: APP_URL } }
         ],
         // Ditiyo Row: Invite ebong Channel
         [
-          { text: '🎁 Invite & Earn', url: `https://t.me/share/url?url=https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_${userId}&text=Join%20me%20on%20TapCoin%20and%20earn%21` },
+          { text: '🎁 Invite Friends', url: `https://t.me/share/url?url=https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_${userId}&text=Join%20me%20on%20TapCoin%20and%20earn%21` },
           { text: '📢 Our Channel', url: CHANNEL_URL }
         ]
       ]
@@ -47,7 +49,7 @@ Click '🔥 START TAPPING' to enter the app!
   });
 });
 
-// 2. /help command (Eta thik chilo)
+// 2. /help command (Channel link shoh)
 bot.command('help', (ctx) => {
   ctx.reply('Need help or want to see updates? Join our official channel!', {
     reply_markup: {
@@ -62,7 +64,7 @@ bot.command('help', (ctx) => {
 
 // 3. Onno jekono message dile
 bot.on('message', async (ctx) => {
-  await ctx.reply("Sorry, I'm just a bot. Use the /start command to see your options.");
+  await ctx.reply("Sorry, I'm just a bot. Use the /start command or press the 'Play' button below.");
 });
 
 
