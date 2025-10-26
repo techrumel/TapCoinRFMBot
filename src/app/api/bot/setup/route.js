@@ -4,11 +4,8 @@ import { NextResponse } from 'next/server';
 const botToken = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new Telegraf(botToken);
 
-// --- Ekhane tomar deya correct URL-ta boshiyechi ---
+// Tomar correct Vercel URL
 const WEBHOOK_URL = `https://tap-coin-rfm-bot.vercel.app/api/bot/webhook`;
-
-// Tomar Mini App-er URL
-const WEB_APP_URL = 'https://t.me/TapcoinRMFBOT/tapcoin';
 
 export async function GET() {
   if (!botToken) {
@@ -22,23 +19,22 @@ export async function GET() {
       throw new Error('Failed to set webhook');
     }
 
-    // 2. "Menu" Button Set koro (Professional look)
+    // 2. "Menu" Button Set koro
     await bot.telegram.setChatMenuButton({
       menu_button: {
         type: 'commands'
       }
     });
 
-    // 3. Bot-er command list set koro
+    // 3. Bot-er command list update koro (Support baad)
     await bot.telegram.setMyCommands([
-      { command: 'start', description: '🚀 Open App & See Options' },
-      { command: 'support', description: '💬 Get Help' },
-      { command: 'help', description: 'ℹ️ Show Help' },
+      { command: 'start', description: '🚀 Start Tapping & Earn' },
+      { command: 'help', description: 'ℹ️ Get Help & Channel Link' }
     ]);
 
     return NextResponse.json({ 
       status: 200, 
-      message: 'Bot setup successful! (Updated with Commands Menu)',
+      message: 'Bot setup successful! (Professional Version)',
       webhook: WEBHOOK_URL,
       menuButton: 'Set to Commands'
     });
