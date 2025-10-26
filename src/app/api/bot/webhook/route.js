@@ -11,39 +11,20 @@ const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 const APP_URL = 'https://t.me/TapcoinRMFBOT/tapcoin';
 const CHANNEL_URL = 'https://t.me/RedMarkFiles'; // Tomar Main Channel Link
 
-// --- 1. Randomized Attractive Messages ---
-const welcomeTitles = [
-  "Welcome, {NAME}! 💸",
-  "Hey {NAME}! Ready to earn? 🔥",
-  "You're here, {NAME}! 🚀",
-  "Let's go, {NAME}! 💰"
-];
-
-const welcomeDescriptions = [
-  "Your tapping session is ready! Click the button below to start collecting coins and climb the leaderboard.",
-  "Tap the coin, invite your friends, and earn real rewards. Your journey starts now!",
-  "We've been waiting for you! Click 'Start Tapping' to jump straight into the game."
-];
-
-// Helper function to pick a random item
-const randomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
-
 // --- Bot Command Setup ---
 
-// 2. Notun /start command (Onek attractive)
+// 1. Notun /start command (Simplified & Fixed)
 bot.start(async (ctx) => {
   const userId = ctx.from.id;
-  const firstName = ctx.from.first_name || 'Player'; // Fallback
+  const firstName = ctx.from.first_name || 'Player';
 
-  // Random message toiri koro
-  const title = randomItem(welcomeTitles).replace('{NAME}', firstName);
-  const description = randomItem(welcomeDescriptions);
-  const welcomeMessage = `*${title}*\n\n${description}`;
+  // --- Static, attractive message (No more markdown errors) ---
+  const welcomeMessage = `👋 Welcome, ${firstName}!\n\nClick '🔥 START TAPPING' below to open the app and start earning coins.`;
 
-  await ctx.replyWithMarkdown(welcomeMessage, { // Markdown use korchi
+  await ctx.reply(welcomeMessage, { // <-- replyWithMarkdown change kore shudhu 'reply' kora hoyeche
     reply_markup: {
       inline_keyboard: [
-        // Prothom Row: Main App Button (Boro ebong Attractive)
+        // Prothom Row: Main App Button
         [
           { text: '🔥 START TAPPING 🔥', web_app: { url: APP_URL } }
         ],
@@ -57,7 +38,7 @@ bot.start(async (ctx) => {
   });
 });
 
-// 3. Upgraded /help command (Channel link shoh)
+// 2. /help command (Eta thik chilo)
 bot.command('help', (ctx) => {
   ctx.reply('Need help or want to see updates? Join our official channel!', {
     reply_markup: {
@@ -70,9 +51,7 @@ bot.command('help', (ctx) => {
   });
 });
 
-// 4. /support command remove kora hoyeche
-
-// 5. Onno jekono message dile
+// 3. Onno jekono message dile
 bot.on('message', async (ctx) => {
   await ctx.reply("Sorry, I'm just a bot. Use the /start command to see your options or open the app from the 'Menu' button below.");
 });
