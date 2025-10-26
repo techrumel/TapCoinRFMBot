@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import BottomNav from '../components/BottomNav';
-import AdBanner from '../components/AdBanner'; // <-- Ad component
+import AdBanner from '../components/AdBanner';
 import LuckyWheel from '../components/LuckyWheel';
 import WithdrawalSystem from '../components/WithdrawalSystem';
 
@@ -9,15 +9,23 @@ const GAME_DURATION = 60; // 1 Minute
 const MAX_ENERGY = 10;
 const ENERGY_REGENERATION_TIME = 30 * 60 * 1000; // 30 minutes in ms
 
+// --- Notun Conversion Rate ---
+const COINS_PER_DOLLAR = 1000000; // 1 Million coins = $1 USD
+
 export default function HomePage() {
-  // States...
+  // Server state
   const [totalScore, setTotalScore] = useState(0);
   const [referralCount, setReferralCount] = useState(0);
+  const [referrerName, setReferrerName] = useState(null); // --- Notun State ---
+
+  // Client state
   const [energy, setEnergy] = useState(MAX_ENERGY);
   const [lastEnergyRegeneration, setLastEnergyRegeneration] = useState(() => Date.now());
   const [sessionScore, setSessionScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
   const [gameState, setGameState] = useState('ready');
+  
+  // UI state
   const [referralLink, setReferralLink] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
   const [flyingNumbers, setFlyingNumbers] = useState([]);
@@ -25,13 +33,14 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [initData, setInitData] = useState(null);
 
-  // --- 1. Load User Data (Telegram check) ---
+  // --- 1. Load User Data ---
   useEffect(() => {
+    // Timeout ektu barano holo
     const authTimer = setTimeout(() => {
       const tg = globalThis.Telegram?.WebApp;
 
       if (tg && tg.initData) {
-        // --- Production Mode (Inside Telegram) ---
+        // --- Production Mode ---
         console.log("Telegram WebApp found. Running in Production Mode.");
         tg.ready();
         tg.expand();
@@ -54,42 +63,48 @@ export default function HomePage() {
             });
             if (!response.ok) throw new Error('Failed to authenticate user');
             const data = await response.json();
+            
             setTotalScore(data.totalScore || 0);
             setReferralCount(data.referralCount || 0);
+            setReferrerName(data.referrerUsername || null); // <-- Notun data set koro
+            
           } catch (error) {
             console.error("Error fetching user data:", error);
-            alert("Could not connect to server. Please try again.");
+            alert("Could not connect. Vercel Environment Variables check koro.");
           } finally {
             setIsLoading(false);
           }
         };
         fetchUserData();
-
         setEnergy(Number(localStorage.getItem('energy')) || MAX_ENERGY);
         setLastEnergyRegeneration(Number(localStorage.getItem('lastEnergyRegeneration')) || Date.now());
 
       } else {
-        // --- Development Mode (Outside Telegram) ---
+        // --- Development Mode ---
         console.warn("Telegram WebApp not found. Running in Development Mode.");
         setReferralLink("https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_DEV123");
         setReferralCount(5);
-        setTotalScore(1000);
+        setTotalScore(1234567);
+        setReferrerName("A Developer"); // Dev mode-er jonno
         setIsLoading(false);
         setEnergy(Number(localStorage.getItem('energy')) || MAX_ENERGY);
         setLastEnergyRegeneration(Number(localStorage.getItem('lastEnergyRegeneration')) || Date.now());
       }
-    }, 100); // 100ms delay
+    }, 300); // 300ms delay
 
     return () => clearTimeout(authTimer);
   }, []);
 
-  // --- 2. Save Local (Energy) State ---
+  // --- (Baki shob code [saveScore, energyRegen, game logic] eki thakbe) ---
+  
+  // (... baki shob game logic function ... ekhane thakbe ...)
+    // --- 2. Save *Local* (Energy) State ---
   useEffect(() => {
     localStorage.setItem('energy', energy);
     localStorage.setItem('lastEnergyRegeneration', lastEnergyRegeneration);
   }, [energy, lastEnergyRegeneration]);
   
-  // --- 3. Save Session Score to Server (Async) ---
+  // --- 3. Save *Session Score* to Server (Async) ---
   const saveScoreToServer = useCallback(async (scoreToAdd) => {
     if (!initData || scoreToAdd <= 0) return; 
     try {
@@ -194,6 +209,7 @@ export default function HomePage() {
     return 'Start';
   };
 
+
   // --- 7. Render Loading or Main Page ---
   if (isLoading) {
     return (
@@ -202,6 +218,9 @@ export default function HomePage() {
       </div>
     );
   }
+
+  // --- Notun Calculation ---
+  const userEarnings = (totalScore / COINS_PER_DOLLAR).toFixed(2);
 
   return (
     <>
@@ -216,9 +235,8 @@ export default function HomePage() {
           ))}
         </div>
         
-        {/* --- Top Section: Ad + Score + Energy --- */}
+        {/* Top Section */}
         <div className="w-full max-w-sm">
-            {/* --- AD BANNER 1 (TOP) --- */}
             <AdBanner adKey="d229a298f12c0c653e1d0c97f68a077c" format="iframe" height={50} width={320} />
             
             <div className="flex justify-between items-center mb-1 mt-4">
@@ -229,10 +247,21 @@ export default function HomePage() {
                 <div className="h-full rounded-full energy-bar-inner" style={{ width: `${(energy / MAX_ENERGY) * 100}%` }}></div>
             </div>
             <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-300 drop-shadow-lg mt-4">{totalScore.toLocaleString()}</h1>
+            
+            {/* --- Notun UI Section --- */}
+            <div className="text-center text-gray-300 mt-2">
+              <p className="font-bold text-lg text-yellow-400">Your Earnings: ${userEarnings} USD</p>
+              <p className="text-xs">(Rate: 1,000,000 Coins = $1 USD)</p>
+              {referrerName && (
+                <p className="text-sm mt-1">Invited by: <span className="font-bold text-white">{referrerName}</span></p>
+              )}
+            </div>
+            {/* --- Notun UI Shesh --- */}
+
         </div>
 
-        {/* --- Middle Section: Game --- */}
-        <div className="flex flex-col items-center justify-center my-6 z-20">
+        {/* Middle Section: Game */}
+        <div className="flex flex-col items-center justify-center my-4 z-20"> {/* Margin komano hoyeche */}
           <button
             type="button"
             className={`w-64 h-64 md:w-72 md:h-72 rounded-full flex items-center justify-center cursor-pointer select-none relative ${gameState === 'playing' ? '' : 'coin-pulse'} p-0 border-none bg-transparent`}
@@ -249,13 +278,7 @@ export default function HomePage() {
           )}
         </div>
         
-        {/* --- AD BANNER 2 (MIDDLE) --- */}
-        {/* Ekhane 300x250 high-value ad-ta dilam */}
-        <div className="w-full max-w-sm my-4 z-20">
-          <AdBanner adKey="39340d76f3a3d7b5a1ffba865eff0357" format="iframe" height={250} width={300} />
-        </div>
-
-        {/* --- Referral Link Section --- */}
+        {/* Referral Link Section */}
         {referralLink && (
           <div className="w-full max-w-sm my-4 z-20">
             <p className="text-lg font-bold mb-2 text-white">Invite Friends & Earn!</p>
@@ -276,11 +299,11 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* --- Bottom Section: Ad + Withdrawal --- */}
+        {/* Bottom Section: Ads & Withdrawal */}
         <div className="w-full max-w-sm z-20">
-           {/* --- AD BANNER 3 (BOTTOM) --- */}
            <AdBanner adKey="d229a298f12c0c653e1d0c97f68a077c" format="iframe" height={50} width={320} />
-           <WithdrawalSystem totalScore={totalScore} />
+           {/* --- Notun Logic Pass Kora --- */}
+           <WithdrawalSystem referralCount={referralCount} totalScore={totalScore} />
         </div>
       </div>
       <BottomNav />

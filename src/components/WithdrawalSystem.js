@@ -3,19 +3,20 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 // --- Notun Logic ---
-const MIN_WITHDRAW_COINS = 20000000; // 20 Million coins ($20 USD)
+const REQUIRED_REFERRALS = 10;
 const COINS_PER_DOLLAR = 1000000; // 1 Million coins
 
-const WithdrawalSystem = ({ totalScore }) => { // <-- Prop 'referralCount' theke 'totalScore' kora hoyeche
+const WithdrawalSystem = ({ referralCount, totalScore }) => { // <-- Duto prop-i neya hocche
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [initData, setInitData] = useState(null);
     const [isRequesting, setIsRequesting] = useState(false);
     
+    // Check korbe referral requirement
+    const hasEnoughReferrals = referralCount >= REQUIRED_REFERRALS;
+    
     // Calculate current earnings
     const currentDollars = (totalScore / COINS_PER_DOLLAR).toFixed(2);
-    const hasEnoughCoins = totalScore >= MIN_WITHDRAW_COINS;
 
-    // Telegram auth data load koro
     useEffect(() => {
         const tg = globalThis.Telegram?.WebApp;
         if (tg && tg.initData) {
@@ -24,12 +25,12 @@ const WithdrawalSystem = ({ totalScore }) => { // <-- Prop 'referralCount' theke
         }
     }, []);
 
-    // (Ekhane 'savePhoneNumberToServer' function-ta thakbe, jodi age add kore thako)
+    // ... (savePhoneNumberToServer function jodi age add kore thako, ta ekhane thakbe)
 
-    // --- Updated Function: Withdraw Button Click ---
     const handleWithdrawClick = () => {
-        if (!hasEnoughCoins) {
-            alert(`You need at least ${MIN_WITHDRAW_COINS.toLocaleString()} coins ($20) to withdraw. You currently have ${totalScore.toLocaleString()} coins ($${currentDollars}).`);
+        // --- Logic Change ---
+        if (!hasEnoughReferrals) {
+            alert(`You need at least ${REQUIRED_REFERRALS} referrals to withdraw. You currently have ${referralCount}.`);
             return;
         }
 
@@ -41,19 +42,12 @@ const WithdrawalSystem = ({ totalScore }) => { // <-- Prop 'referralCount' theke
 
         setIsRequesting(true);
 
-        // --- Telegram-er kache Phone Number Chao ---
         tg.requestContact(async (isShared) => {
             if (isShared) {
-                // User permission diyeche
                 console.log("Contact shared!");
-                
                 // (Ekhane number save korar logic thakte pare)
-                
-                // Ekhon modal open koro
                 setIsModalOpen(true);
-                
             } else {
-                // User "Cancel" click koreche
                 alert("You must share your contact to withdraw.");
             }
             setIsRequesting(false);
@@ -63,9 +57,9 @@ const WithdrawalSystem = ({ totalScore }) => { // <-- Prop 'referralCount' theke
     return (
         <>
             <div className="w-full text-center mt-4">
-                {/* --- Notun Text --- */}
-                <p className={`mb-2 font-bold ${hasEnoughCoins ? 'text-green-400' : 'text-yellow-400'}`}>
-                    Coins: {totalScore.toLocaleString()} / {MIN_WITHDRAW_COINS.toLocaleString()}
+                {/* --- Notun UI --- */}
+                <p className={`mb-2 font-bold ${hasEnoughReferrals ? 'text-green-400' : 'text-yellow-400'}`}>
+                    Referrals: {referralCount} / {REQUIRED_REFERRALS}
                 </p>
                 <p className="text-sm text-gray-400 mb-2">
                     Current Value: ${currentDollars} USD
@@ -73,11 +67,11 @@ const WithdrawalSystem = ({ totalScore }) => { // <-- Prop 'referralCount' theke
                 
                 <button
                     onClick={handleWithdrawClick}
-                    disabled={!hasEnoughCoins || isRequesting || !initData}
+                    disabled={!hasEnoughReferrals || isRequesting || !initData}
                     className="w-full bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-bold py-3 px-4 rounded-lg text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isRequesting ? 'Requesting...' : 'Withdraw Funds'}
-                </button> {/* <-- TYPO FIX KORA HOYECHE: </D_button> -> </button> */}
+                </button>
             </div>
 
             {isModalOpen && (
@@ -85,11 +79,11 @@ const WithdrawalSystem = ({ totalScore }) => { // <-- Prop 'referralCount' theke
                     <div className="bg-gray-800 border border-cyan-500 rounded-2xl p-6 max-w-sm w-full mx-4">
                         <h2 className="text-2xl font-bold mb-4 text-cyan-300">Withdrawal Instructions</h2>
                         
-                        {/* --- Notun Instructions --- */}
                         <div className="text-left space-y-3 text-gray-300">
                             <p className='text-white text-lg'>Your Balance: ${currentDollars} USD</p>
                             <ul className="list-disc list-inside text-sm pl-2">
                                 <li>Rate: 1,000,000 Coins = $1 USD</li>
+                                <li>Requirement: 10 Referrals (Completed)</li>
                                 <li>Minimum Payout: $20 USD</li>
                             </ul>
                             <p className="text-white pt-2">Steps to Withdraw:</p>
@@ -114,7 +108,8 @@ const WithdrawalSystem = ({ totalScore }) => { // <-- Prop 'referralCount' theke
 };
 
 WithdrawalSystem.propTypes = {
-    totalScore: PropTypes.number.isRequired, // <-- Prop name update kora hoyeche
+    referralCount: PropTypes.number.isRequired,
+    totalScore: PropTypes.number.isRequired, // <-- Notun prop
 };
 
 export default WithdrawalSystem;
