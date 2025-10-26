@@ -10,19 +10,15 @@ const MAX_ENERGY = 10;
 const ENERGY_REGENERATION_TIME = 30 * 60 * 1000; // 30 minutes in ms
 
 export default function HomePage() {
-  // Fix 1: Load state from localStorage using lazy initializer to avoid cascading renders
-  const [totalScore, setTotalScore] = useState(() => Number(localStorage.getItem('totalScore')) || 0);
-  const [energy, setEnergy] = useState(() => Number(localStorage.getItem('energy')) || MAX_ENERGY);
-  const [lastEnergyRegeneration, setLastEnergyRegeneration] = useState(() =>
-    Number(localStorage.getItem('lastEnergyRegeneration')) || Date.now()
-  );
+  // Fix: Initialize with default values for server-side rendering
+  const [totalScore, setTotalScore] = useState(0);
+  const [energy, setEnergy] = useState(MAX_ENERGY);
+  const [lastEnergyRegeneration, setLastEnergyRegeneration] = useState(() => Date.now());
   
   const [sessionScore, setSessionScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
   const [gameState, setGameState] = useState('ready'); // ready, playing, finished
   
-  // Fix 3: 'setReferralCount' is reserved for a future API call.
-  // eslint-disable-next-line no-unused-vars
   const [referralCount, setReferralCount] = useState(0);
   const [referralLink, setReferralLink] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
@@ -30,31 +26,51 @@ export default function HomePage() {
   const [flyingNumbers, setFlyingNumbers] = useState([]);
   const [showWheel, setShowWheel] = useState(false);
 
-  // Load state from localStorage and initialize Telegram
+  // Initialize Telegram AND Load localStorage data on Client-Side
   useEffect(() => {
-    // State loading is moved to useState. This effect now only handles Telegram init.
-    if (globalThis.Telegram?.WebApp) {
+    // --- FIX: Load localStorage data only on the client ---
+    // This code will only run in the browser, not on the server
+    const savedScore = Number(localStorage.getItem('totalScore')) || 0;
+    const savedEnergy = Number(localStorage.getItem('energy')) || MAX_ENERGY;
+    const savedRegen = Number(localStorage.getItem('lastEnergyRegeneration')) || Date.now();
+
+    setTotalScore(savedScore);
+    setEnergy(savedEnergy);
+    setLastEnergyRegeneration(savedRegen);
+    // --- End of Fix ---
+
+    // --- Existing Telegram/Dev Logic ---
+    let currentUser;
+    if (globalThis.Telegram?.WebApp && globalThis.Telegram.WebApp.initDataUnsafe?.user) {
+      // --- PRODUCTION (Inside Telegram) ---
+      console.log("Running inside Telegram.");
       const tg = globalThis.Telegram.WebApp;
       tg.ready();
       tg.expand();
-      if (tg.initDataUnsafe?.user) {
-        const currentUser = tg.initDataUnsafe.user;
-        // Fix 3: Removed unused 'user' state. We only need the ID for the link.
-        
-        // --- Refer Link Create ---
-        const refLink = `https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_${currentUser.id}`;
-        setReferralLink(refLink);
-
-        // Fetch referral count for this user
-        // fetch(`/api/referral?userId=${currentUser.id}`).then(res => res.json()).then(data => {
-        //   setReferralCount(data.count); // <-- Use the setter when ready
-        // });
-      }
+      currentUser = tg.initDataUnsafe.user;
+      
+      // Fetch real referral count here
+      // fetch(`/api/referral?userId=${currentUser.id}`).then(res => res.json()).then(data => {
+      //   setReferralCount(data.count); 
+      // });
+      
+    } else {
+      // --- DEVELOPMENT (Outside Telegram) ---
+      console.warn("Telegram WebApp data not found. Running in development mode.");
+      currentUser = { id: 123456789, first_name: "Dev", last_name: "User" };
+      setReferralCount(5); 
     }
-  }, []); // Empty dependency array is correct here for init logic
+
+    if (currentUser) {
+      const refLink = `https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_${currentUser.id}`;
+      setReferralLink(refLink);
+    }
+    
+  }, []); // Empty dependency array ensures this runs only once on load (on client)
 
   // Save state to localStorage
   useEffect(() => {
+    // This effect will also only run on the client, so localStorage is safe here
     localStorage.setItem('totalScore', totalScore);
     localStorage.setItem('energy', energy);
     localStorage.setItem('lastEnergyRegeneration', lastEnergyRegeneration);
@@ -75,15 +91,13 @@ export default function HomePage() {
   }, [energy, lastEnergyRegeneration]);
 
   // Game Timer Logic
-  // Fix 2: This effect is a state machine for the game timer.
-  // It's correct to set state here when the timer (timeLeft) reaches 0.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (gameState !== 'playing' || timeLeft <= 0) {
       if (gameState === 'playing' && timeLeft <= 0) {
         setGameState('finished');
         setTotalScore(prev => prev + sessionScore);
-        if (sessionScore > 0) { // Show wheel only if they scored
+        if (sessionScore > 0) { 
             setShowWheel(true);
         }
       }
@@ -196,7 +210,7 @@ export default function HomePage() {
           )}
         </div>
         
-        {/* --- Referral Link Section Added --- */}
+        {/* --- Referral Link Section --- */}
         {referralLink && (
           <div className="w-full max-w-sm my-4 z-20">
             <p className="text-lg font-bold mb-2 text-white">Invite Friends & Earn!</p>
@@ -225,9 +239,6 @@ export default function HomePage() {
       </div>
       <BottomNav />
 
-      {/* Fix 4: SonarLint cannot parse <style jsx global> syntax. 
-        This is a linter configuration issue, not a code error.
-      */}
       <style jsx global>{`
         .energy-bar-bg {
           background-color: #374151; /* gray-700 */
