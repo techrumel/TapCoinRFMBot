@@ -1,0 +1,60 @@
+/* src/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #0d0f1a;
+  background-image: radial-gradient(circle at top left, rgba(79, 70, 229, 0.3) 0%, transparent 40%),
+                    radial-gradient(circle at bottom right, rgba(217, 70, 239, 0.3) 0%, transparent 40%);
+  color: #e2e8f0;
+  -webkit-tap-highlight-color: transparent;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+/* --- Animations --- */
+@keyframes pulse-glow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px 5px rgba(253, 224, 71, 0.4), 0 0 40px 10px rgba(251, 146, 60, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px 10px rgba(253, 224, 71, 0.6), 0 0 60px 20px rgba(251, 146, 60, 0.4);
+  }
+}
+.coin-pulse {
+  animation: pulse-glow 2.5s infinite ease-in-out;
+}
+
+@keyframes fly-up {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-80px) scale(1.5); }
+}
+.flying-number {
+  animation: fly-up 1s ease-out forwards;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(3600deg); } /* Multiple spins */
+}
+.wheel.spinning {
+  transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* --- Components --- */
+.energy-bar-bg {
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.energy-bar-inner {
+  background: linear-gradient(90deg, #fde047, #f59e0b);
+  transition: width 0.5s ease-out;
+}
+
+.modal-overlay {
+  background-color: rgba(13, 15, 26, 0.8);
+  backdrop-filter: blur(8px);
+}
