@@ -30,73 +30,83 @@ export default function HomePage() {
   const [initData, setInitData] = useState(null); // Telegram auth data save korar jonno
 
   // --- 1. Load User Data from Server (or use Dev mock) ---
+  // --- EI SECTION-TA UPDATE KORA HOYECHE ---
   useEffect(() => {
-    if (!globalThis.Telegram?.WebApp) {
-      console.warn("Not in Telegram. Using mock data for development.");
-      // --- Development Mode (Mock Data) ---
-      setReferralLink("https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_DEV123");
-      setReferralCount(5);
-      setTotalScore(1000);
-      setIsLoading(false);
+    // We add a small delay (100ms) to allow the Telegram WebApp script to load
+    const authTimer = setTimeout(() => {
       
-      // Load local energy
-      setEnergy(Number(localStorage.getItem('energy')) || MAX_ENERGY);
-      setLastEnergyRegeneration(Number(localStorage.getItem('lastEnergyRegeneration')) || Date.now());
-      return;
-    }
+      const tg = globalThis.Telegram?.WebApp;
 
-    // --- Production Mode (Inside Telegram) ---
-    const tg = globalThis.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
-    
-    const telegramInitData = tg.initData;
-    const userId = tg.initDataUnsafe?.user?.id;
+      // Check if Telegram script is loaded and has auth data
+      if (tg && tg.initData) {
+        // --- Production Mode (Inside Telegram) ---
+        console.log("Telegram WebApp found. Running in Production Mode.");
+        tg.ready();
+        tg.expand();
+        
+        const telegramInitData = tg.initData;
+        const userId = tg.initDataUnsafe?.user?.id;
 
-    setInitData(telegramInitData); // Auth data save kore rakhi, pore score save korte lagbe
+        setInitData(telegramInitData); // Auth data save kore rakhi
 
-    if (userId) {
-      setReferralLink(`https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_${userId}`);
-    }
-
-    // Server theke real data fetch koro
-    const fetchUserData = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch('/api/user/auth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData: telegramInitData }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to authenticate user');
+        if (userId) {
+          setReferralLink(`https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_${userId}`);
+        } else {
+          console.error("User ID not found in Telegram initData.");
         }
 
-        const data = await response.json();
+        // Server theke real data fetch koro
+        const fetchUserData = async () => {
+          try {
+            setIsLoading(true);
+            const response = await fetch('/api/user/auth', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ initData: telegramInitData }),
+            });
 
-        // Server theke pawa REAL data set koro
-        setTotalScore(data.totalScore || 0);
-        setReferralCount(data.referralCount || 0);
+            if (!response.ok) {
+              throw new Error('Failed to authenticate user');
+            }
 
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        alert("Could not connect to server. Please try again.");
-      } finally {
+            const data = await response.json();
+            setTotalScore(data.totalScore || 0);
+            setReferralCount(data.referralCount || 0);
+
+          } catch (error) {
+            console.error("Error fetching user data:", error);
+            alert("Could not connect to server. Please try again.");
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
+        fetchUserData();
+
+        // Load local energy state
+        setEnergy(Number(localStorage.getItem('energy')) || MAX_ENERGY);
+        setLastEnergyRegeneration(Number(localStorage.getItem('lastEnergyRegeneration')) || Date.now());
+
+      } else {
+        // --- Development Mode (Outside Telegram) ---
+        console.warn("Telegram WebApp not found after 100ms. Running in Development Mode.");
+        setReferralLink("https://t.me/TapcoinRMFBOT/tapcoin?startapp=ref_DEV123");
+        setReferralCount(5);
+        setTotalScore(1000);
         setIsLoading(false);
+        
+        // Load local energy
+        setEnergy(Number(localStorage.getItem('energy')) || MAX_ENERGY);
+        setLastEnergyRegeneration(Number(localStorage.getItem('lastEnergyRegeneration')) || Date.now());
       }
-    };
 
-    fetchUserData();
+    }, 100); // 100ms delay
 
-    // Load local energy state
-    setEnergy(Number(localStorage.getItem('energy')) || MAX_ENERGY);
-    setLastEnergyRegeneration(Number(localStorage.getItem('lastEnergyRegeneration')) || Date.now());
-
-  }, []);
+    return () => clearTimeout(authTimer); // Cleanup the timer
+    
+  }, []); // Empty array, runs only once
 
   // --- 2. Save *Local* (Energy) State ---
-  // totalScore ekhon server-e save hoy, tai localStorage theke remove kora hocche
   useEffect(() => {
     localStorage.setItem('energy', energy);
     localStorage.setItem('lastEnergyRegeneration', lastEnergyRegeneration);
@@ -104,22 +114,18 @@ export default function HomePage() {
   
   // --- 3. Save *Session Score* to Server (Async) ---
   const saveScoreToServer = useCallback(async (scoreToAdd) => {
-    // initData state-e save kora chilo
     if (!initData || scoreToAdd <= 0) return; 
 
     try {
-      // Notun API route-e score pathacchi
       await fetch('/api/user/update-score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ initData, scoreToAdd }),
       });
-      // Amra response-er jonno wait korbona, UI update hoye geche
     } catch (error) {
       console.error('Failed to save score to server:', error);
-      // Ekhane error hole pore abar pathanor system kora jete pare
     }
-  }, [initData]); // initData ready holei ei function-ta ready hobe
+  }, [initData]);
 
   // --- 4. Energy Regeneration Logic ---
   useEffect(() => {
@@ -131,7 +137,7 @@ export default function HomePage() {
                   setLastEnergyRegeneration(now);
               }
           }
-      }, 60000); // Check every minute
+      }, 60000); 
       return () => clearInterval(regenerationInterval);
   }, [energy, lastEnergyRegeneration]);
 
@@ -140,13 +146,10 @@ export default function HomePage() {
     if (gameState !== 'playing' || timeLeft <= 0) {
       if (gameState === 'playing' && timeLeft <= 0) {
         setGameState('finished');
-        
-        // Update UI immediately
         setTotalScore(prev => prev + sessionScore); 
         
-        // Asynchronously save score to server
         if (sessionScore > 0) {
-          saveScoreToServer(sessionScore); // Fire-and-forget
+          saveScoreToServer(sessionScore);
           setShowWheel(true);
         }
       }
@@ -190,7 +193,6 @@ export default function HomePage() {
   const handleSpinEnd = (prize) => {
       setShowWheel(false);
       if (typeof prize === 'number') {
-          // Bonus score-takeo server-e save korte hobe
           setTotalScore(prev => prev + prize);
           saveScoreToServer(prize);
           alert(`Congratulations! You won ${prize} extra coins!`);
