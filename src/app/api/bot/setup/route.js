@@ -4,9 +4,8 @@ import { NextResponse } from 'next/server';
 const botToken = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new Telegraf(botToken);
 
-// Tomar Vercel project-er main URL
-// ** IMPORTNAT: Tomar URL thik ache kina check kore niyo **
-const WEBHOOK_URL = `https://tapcoinrmfbot.vercel.app/api/bot/webhook`;
+// --- Ekhane tomar deya correct URL-ta boshiyechi ---
+const WEBHOOK_URL = `https://tap-coin-rfm-bot.vercel.app/api/bot/webhook`;
 
 // Tomar Mini App-er URL
 const WEB_APP_URL = 'https://t.me/TapcoinRMFBOT/tapcoin';
@@ -24,15 +23,13 @@ export async function GET() {
     }
 
     // 2. "Menu" Button Set koro (Professional look)
-    // Ekhon "Open App" er bodole shudhu "Menu" dekhabe
     await bot.telegram.setChatMenuButton({
       menu_button: {
-        type: 'commands' // <-- Change kora hoyeche
+        type: 'commands'
       }
     });
 
     // 3. Bot-er command list set koro
-    // Menu button-e click korle eigulo dekhabe
     await bot.telegram.setMyCommands([
       { command: 'start', description: '🚀 Open App & See Options' },
       { command: 'support', description: '💬 Get Help' },
